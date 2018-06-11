@@ -74,6 +74,7 @@ namespace msfastbuild
 		static public string PreBuildBatchFile = "";
 		static public string PostBuildBatchFile = "";
 		static public string SolutionDir = "";
+		static public string SolutionName = "";
 		static public bool HasCompileActions = true;
 
 		public enum BuildType
@@ -129,6 +130,7 @@ namespace msfastbuild
 						ProjectsToBuild.Add(Path.GetFullPath(CommandLineOptions.Project));
 					}
 
+					SolutionName = Path.GetFileName(CommandLineOptions.Solution).Split('.').First<string>();
 					SolutionDir = Path.GetDirectoryName(Path.GetFullPath(CommandLineOptions.Solution));
 					SolutionDir = SolutionDir.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 					if(SolutionDir.Last() != Path.AltDirectorySeparatorChar)
@@ -212,6 +214,10 @@ namespace msfastbuild
 						ProjectCollection projColl = new ProjectCollection();
 						if (!string.IsNullOrEmpty(SolutionDir))
 							projColl.SetGlobalProperty("SolutionDir", SolutionDir);
+
+						if (!string.IsNullOrEmpty(SolutionName))
+							projColl.SetGlobalProperty("SolutionName", SolutionName);
+
 						newProj = new MSFBProject();
 						Project proj = projColl.LoadProject(ProjectPath);
 
@@ -221,6 +227,10 @@ namespace msfastbuild
 							proj.SetGlobalProperty("Platform", CommandLineOptions.Platform);
 							if (!string.IsNullOrEmpty(SolutionDir))
 								proj.SetGlobalProperty("SolutionDir", SolutionDir);
+
+							if (!string.IsNullOrEmpty(SolutionName))
+								proj.SetGlobalProperty("SolutionName", SolutionName);
+
 							proj.ReevaluateIfNecessary();
 
 							newProj.Proj = proj;
