@@ -116,7 +116,9 @@ namespace msfastbuild
 				{
 					if (string.IsNullOrEmpty(CommandLineOptions.Project))
 					{
-						List<ProjectInSolution> SolutionProjects = SolutionFile.Parse(Path.GetFullPath(CommandLineOptions.Solution)).ProjectsInOrder.Where(el => el.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat).ToList();
+						String ProjConfig = CommandLineOptions.Config + "|" + CommandLineOptions.Platform;
+						List<ProjectInSolution> SolutionProjects = SolutionFile.Parse(Path.GetFullPath(CommandLineOptions.Solution)).
+							ProjectsInOrder.Where(el => el.ProjectType == SolutionProjectType.KnownToBeMSBuildFormat && el.ProjectConfigurations[ProjConfig].IncludeInBuild).ToList();
 						SolutionProjects.Sort((x, y) => //Very dubious sort.
 						{
 							if (x.Dependencies.Contains(y.ProjectGuid)) return 1;
