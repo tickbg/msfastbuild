@@ -349,7 +349,7 @@ namespace msfastbuild
 				return false;
 			}
 		
-			public string ToString(int ActionNumber)
+			public string ToString(int ActionNumber, string ProjectRootPath)
 			{
 				bool UsedUnity = false;
 				string ResultString = "";
@@ -374,6 +374,7 @@ namespace msfastbuild
 				else
 				{
 					ObjectListString.AppendFormat("\t.CompilerInputFiles = {{ {0} }}\n", string.Join(",", CompilerInputFiles.ConvertAll(el => string.Format("'{0}'", el)).ToArray()));
+					ObjectListString.AppendFormat("\t.CompilerInputFilesRoot = '{0}'\n", ProjectRootPath);
 				}				
 				ObjectListString.AppendFormat("\t.CompilerOptions = '{0}'\n", CompilerOptions);
 				if (!string.IsNullOrEmpty(CompilerOutputExtension))
@@ -589,7 +590,7 @@ namespace msfastbuild
 			int ActionNumber = 0;
 			foreach (ObjectListNode ObjList in ObjectLists)
 			{
-				OutputString.Append(ObjList.ToString(ActionNumber));
+				OutputString.Append(ObjList.ToString(ActionNumber, ActiveProject.DirectoryPath));
 				ActionNumber++;		
 			}
 
