@@ -282,10 +282,11 @@ namespace msfastbuild
 			string projectDir = Path.GetDirectoryName(ProjectPath) + "\\";
 
 			string BatchFileText = "@echo off\n"
-				+ "%comspec% /c \"\"" + VCBasePath
+				+ "%comspec% /c \"\"" + VCBasePath + @"\Auxiliary\Build\"
 				+ "vcvarsall.bat\" " + (Platform == "Win32" ? "x86" : "x64") + " " 
-				+ (PlatformToolsetVersion == "140" ? WindowsSDKTarget : "") // Only VS2015R3 specifies the WinSDK?
+				+ (PlatformToolsetVersion == "140" ? WindowsSDKTarget : "")
 				+ " && \"" + CommandLineOptions.FBPath  +"\" %*\"";
+
 			File.WriteAllText(projectDir + "fb.bat", BatchFileText);
 
 			Console.WriteLine("Building " + Path.GetFileNameWithoutExtension(ProjectPath));
@@ -434,29 +435,18 @@ namespace msfastbuild
 			OutputString.AppendFormat("\t\t\"SystemRoot={0}\"\n", ActiveProject.GetProperty("SystemRoot").EvaluatedValue);
 			OutputString.Append("\t}\n}\n\n");
 
-			// Debug Emo
-			Console.WriteLine("VSBasePath : {0}", ActiveProject.GetProperty("VSInstallDir").EvaluatedValue);
-			Console.WriteLine("VCBasePath : {0}", ActiveProject.GetProperty("VCInstallDir").EvaluatedValue);
-			Console.WriteLine("PlatformToolsetVersion : {0}", ActiveProject.GetProperty("PlatformToolsetVersion").EvaluatedValue);
-			Console.WriteLine("WindowsSDKBasePath : {0}", ActiveProject.GetProperty("WindowsSdkDir").EvaluatedValue);
-			Console.WriteLine("ToolsVersions : {0}", ActiveProject.ToolsVersion);
-			Console.WriteLine("SolutionDir : {0}", SolutionDir);
-			Console.WriteLine("SolutionName : {0}", SolutionName);
-			Console.WriteLine("VSInstallDir: {0}", ActiveProject.GetPropertyValue("VSInstallDir"));
-			Console.WriteLine("VCTargetsPath : {0}\n\n", ActiveProject.GetPropertyValue("VCTargetsPath"));
-
 			StringBuilder CompilerString = new StringBuilder("Compiler('msvc')\n{\n");
 
 			// TODO generate '14.14.26428' version number according to installed VS version
 			string CompilerRoot = VCBasePath + "Tools/MSVC/14.14.26428/bin/";
 			if (Platform == "Win64" || Platform == "x64")
 			{
-				CompilerString.Append("\t.Root = '$VSBasePath$/Tools/MSVC/14.14.26428/bin/Hostx64/x64'\n");
+				CompilerString.Append("\t.Root = '$VCBasePath$/Tools/MSVC/14.14.26428/bin/Hostx64/x64'\n");
 				CompilerRoot += "Hostx64/x64/";
 			}
 			else if (Platform == "Win32" || Platform == "x86" || true) //Hmm.
 			{
-				CompilerString.Append("\t.Root = '$VSBasePath$/Tools/MSVC/14.14.26428/bin/Hostx86/x86'\n");
+				CompilerString.Append("\t.Root = '$VCBasePath$/Tools/MSVC/14.14.26428/bin/Hostx86/x86'\n");
 				CompilerRoot += "Hostx86/x86/";
 			}
 			CompilerString.Append("\t.Executable = '$Root$/cl.exe'\n");
@@ -481,12 +471,16 @@ namespace msfastbuild
 			
 			CompilerString.Append("\t\t'$Root$/mspdbsrv.exe'\n");
 			CompilerString.Append("\t\t'$Root$/mspdbcore.dll'\n");
-			
-			CompilerString.AppendFormat("\t\t'$Root$/mspft{0}.dll'\n", PlatformToolsetVersion);
-			CompilerString.AppendFormat("\t\t'$Root$/msobj{0}.dll'\n", PlatformToolsetVersion);
-			CompilerString.AppendFormat("\t\t'$Root$/mspdb{0}.dll'\n", PlatformToolsetVersion);
-			CompilerString.AppendFormat("\t\t'$VSBasePath$/VC/redist/{0}/Microsoft.VC{1}.CRT/msvcp{1}.dll'\n", Platform == "Win32" ? "x86" : "x64", PlatformToolsetVersion);
-			CompilerString.AppendFormat("\t\t'$VSBasePath$/VC/redist/{0}/Microsoft.VC{1}.CRT/vccorlib{1}.dll'\n", Platform == "Win32" ? "x86" : "x64", PlatformToolsetVersion);
+
+			// A dirty fix, cause PlatformToolsetVersion in VS2017 is 141 but real file suffix is 140.
+			string ToolsVer = "140";
+			CompilerString.AppendFormat("\t\t'$Root$/mspft{0}.dll'\n", ToolsVer);
+			CompilerString.AppendFormat("\t\t'$Root$/msobj{0}.dll'\n", ToolsVer);
+			CompilerString.AppendFormat("\t\t'$Root$/mspdb{0}.dll'\n", ToolsVer);
+			CompilerString.AppendFormat("\t\t'$VSBasePath$/VC/Redist/MSVC/14.14.26405/{0}/Microsoft.VC{1}.CRT/msvcp{2}.dll'\n",
+				Platform == "Win32" ? "x86" : "x64", PlatformToolsetVersion, ToolsVer);
+			CompilerString.AppendFormat("\t\t'$VSBasePath$/VC/Redist/MSVC/14.14.26405/{0}/Microsoft.VC{1}.CRT/vccorlib{2}.dll'\n",
+				Platform == "Win32" ? "x86" : "x64", PlatformToolsetVersion, ToolsVer);
 			
 			CompilerString.Append("\t}\n"); //End extra files
 			CompilerString.Append("}\n\n"); //End compiler
@@ -622,11 +616,11 @@ namespace msfastbuild
 
 				if (Platform == "Win32" || Platform == "x86")
 				{
-					OutputString.Append("\t.Linker = '$VSBasePath$\\VC\\bin\\link.exe'\n");
+					OutputString.Append("\t.Linker = '$VSBasePath$\\VC\\Tools\\MSVC\\14.14.26428\\bin\\Hostx86\\x86\\link.exe'\n");
 				}
 				else
 				{
-					OutputString.Append("\t.Linker = '$VSBasePath$\\VC\\bin\\amd64\\link.exe'\n");
+					OutputString.Append("\t.Linker = '$VSBasePath$\\VC\\Tools\\MSVC\\14.14.26428\\bin\\Hostx64\\x64\\link.exe'\n");
 				}
 		
 				var LinkDefinitions = ActiveProject.ItemDefinitions["Link"];
