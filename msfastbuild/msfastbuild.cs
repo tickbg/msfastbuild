@@ -719,7 +719,19 @@ namespace msfastbuild
 							+ (PlatformToolsetVersion == "141" ? WindowsSDKTarget : "") + "\n";
 
 						PostBuildBatchFile = Path.Combine(ActiveProject.DirectoryPath, Path.GetFileNameWithoutExtension(ActiveProject.FullPath) + "_postbuild.bat");
-						File.WriteAllText(PostBuildBatchFile, BatchText + MetaData.EvaluatedValue);
+
+						// Put double quotes around copy command arguments
+						if (MetaData.EvaluatedValue.StartsWith("copy") && !MetaData.EvaluatedValue.Contains("\""))
+						{
+							string[] CmdParts = MetaData.EvaluatedValue.Split(' ');
+							string CopyCmdLine = String.Format("{0} \"{1}\" \"{2}\"", CmdParts[0], CmdParts[1], CmdParts[2]);
+							File.WriteAllText(PostBuildBatchFile, BatchText + CopyCmdLine);
+						}
+						else
+						{
+							File.WriteAllText(PostBuildBatchFile, BatchText + MetaData.EvaluatedValue);
+						}
+
 						OutputString.Append("Exec('postbuild') \n{\n");
 						OutputString.AppendFormat("\t.ExecExecutable = '{0}' \n", PostBuildBatchFile);
 						OutputString.AppendFormat("\t.ExecInput = '{0}' \n", PostBuildBatchFile);
